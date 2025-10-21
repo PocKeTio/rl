@@ -982,23 +982,17 @@ class Trainer:
         """
         score = None
         
-        # PRIORITÉ 1: Direct call() sur l'env (le plus fiable)
-        if done_mask[env_idx]:
-            try:
-                if hasattr(self.envs, 'call'):
-                    scores = self.envs.call('get_current_score')
-                    if scores and isinstance(scores, (list, tuple)) and len(scores) > env_idx:
-                        score = scores[env_idx]
-                        if isinstance(score, (list, tuple, np.ndarray)) and len(score) >= 2:
-                            # Debug log première fois
-                            if self.total_episodes_completed == 1:
-                                logger.info(f"✅ Score via call(): {score}")
-                            return (int(score[0]), int(score[1]))
-            except Exception as e:
-                # Log error première fois
-                if self.total_episodes_completed == 1:
-                    logger.warning(f"call() failed: {e}")
-                pass
+        # PRIORITÉ 1: info['raw_score'][env_idx] (vectorized format)
+        # NOTE: call() ne fonctionne pas car AsyncVectorEnv reset avant qu'on puisse lire
+        if isinstance(info, dict) and 'raw_score' in info:
+            raw_scores = info['raw_score']
+            if hasattr(raw_scores, '__getitem__') and len(raw_scores) > env_idx:
+                score = raw_scores[env_idx]
+                if isinstance(score, (list, tuple, np.ndarray)) and len(score) >= 2:
+                    # Debug log première fois
+                    if self.total_episodes_completed <= 3:
+                        logger.info(f"✅ Score via raw_score[{env_idx}]: {score}")
+                    return (int(score[0]), int(score[1]))
         
         # PRIORITÉ 2: Gymnasium AsyncVectorEnv avec final_info (standard)
         if done_mask[env_idx] and isinstance(info, dict) and 'final_info' in info:
@@ -1013,19 +1007,11 @@ class Trainer:
                             logger.info(f"✅ Score via final_info: {score}")
                         return (int(score[0]), int(score[1]))
         
-        # PRIORITÉ 3: info[env_idx]['raw_score'] (custom format)
+        # PRIORITÉ 3: info[env_idx]['raw_score'] (custom format - fallback)
         if isinstance(info, dict) and env_idx in info:
             env_info = info[env_idx]
             if isinstance(env_info, dict) and 'raw_score' in env_info:
                 score = env_info['raw_score']
-                if isinstance(score, (list, tuple, np.ndarray)) and len(score) >= 2:
-                    return (int(score[0]), int(score[1]))
-        
-        # PRIORITÉ 4: info['raw_score'][env_idx] (vectorized format)
-        if isinstance(info, dict) and 'raw_score' in info:
-            raw_scores = info['raw_score']
-            if hasattr(raw_scores, '__getitem__') and len(raw_scores) > env_idx:
-                score = raw_scores[env_idx]
                 if isinstance(score, (list, tuple, np.ndarray)) and len(score) >= 2:
                     return (int(score[0]), int(score[1]))
         
