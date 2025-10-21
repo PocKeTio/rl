@@ -759,12 +759,12 @@ class Trainer:
                 goals_per_game = self.total_goals_scored / self.total_episodes_completed
                 conceded_per_game = self.total_goals_conceded / self.total_episodes_completed
                 
-                logger.info("\n📊 TRAINING METRICS (last 100 episodes)")
+                logger.info("\n📊 TRAINING METRICS (cumulative since start)")
                 logger.info(f"\n⚽ Goals:")
                 logger.info(f"  Scored:    {goals_per_game:.2f}/game")
                 logger.info(f"  Conceded:  {conceded_per_game:.2f}/game")
                 logger.info(f"\n🏆 Results:")
-                logger.info(f"  Winrate:   {winrate:.1f}%")
+                logger.info(f"  Winrate:   {winrate:.1f}% (cumulative)")
                 logger.info(f"  Drawrate:  {drawrate:.1f}%")
                 logger.info(f"  Lossrate:  {lossrate:.1f}%")
                 logger.info(f"\n🎯 Total:")
