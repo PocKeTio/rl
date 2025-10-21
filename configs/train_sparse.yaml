@@ -26,7 +26,7 @@ max_grad_norm: 0.76
 # RND et entropy sont complémentaires, pas substituables
 entropy_coef_start: 0.02  # Standard PPO avec RND (pas trop haut)
 entropy_coef_end: 0.002   # Décroît progressivement
-entropy_anneal_steps: 50000000  # Anneal lent sur 50M steps
+entropy_anneal_steps: 5000000  # SOLUTION #2: Anneal rapide (5M au lieu de 50M)
 
 # ========== OPTIMIZATION ==========
 learning_rate: 0.0003  # Standard PPO (plus rapide que 0.0001)
@@ -42,7 +42,7 @@ lstm_num_layers: 1
 
 # ========== RND (CURIOSITY) ==========
 use_rnd: true                 # Active RND pour curiosity-driven exploration
-rnd_beta: 0.05                # Poids intrinsic reward (TRÈS FAIBLE: bootstrap phase)
+rnd_beta: 0.01               # SOLUTION #3: Réduit de 0.1 à 0.01 (laisse rewards dominer)
 rnd_output_dim: 128           # Dimension embedding RND
 rnd_hidden_dim: 256           # Taille hidden layers RND
 rnd_lr: 0.0001                # Learning rate RND (plus lent que policy)
@@ -51,7 +51,7 @@ rnd_lr: 0.0001                # Learning rate RND (plus lent que policy)
 save_freq: 50000  # Save moins souvent
 
 # ========== REWARDS & CURRICULUM ==========
-reward_config: "configs/rewards_sparse.yaml"
+reward_config: "configs/rewards_dense.yaml"  # SOLUTION #1: Dense rewards pour bootstrap
 curriculum_config: "configs/curriculum_5v5.yaml"
 
 # ========== LOGGING ==========

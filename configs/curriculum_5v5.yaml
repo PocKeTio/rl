@@ -2,17 +2,7 @@
 # Objectif : Apprentissage direct sur situations de jeu réelles
 
 phases:
-  # Phase 0: ACADEMY EMPTY GOAL CLOSE (apprentissage de SHOT)
-  - name: "empty_goal_close"
-    env_name: "academy_empty_goal_close"
-    duration_steps: 10000000  # 1M steps
-    success_criteria:
-      winrate_min: .9 # 100% de réussite (trivial)
-      min_episodes: 100
-    opponent_mix:
-      built_in: 1.0
-
-    # Phase 0bis: Keeper seulement (pas de défenseur)
+    # Phase 0 Keeper seulement (pas de défenseur)
   - name: "run_to_score_with_keeper"
     env_name: "academy_run_to_score_with_keeper"
     duration_steps: 5000000

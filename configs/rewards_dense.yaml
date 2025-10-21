@@ -101,8 +101,8 @@ dangerous_pass_penalty:
   danger_zone_x: -0.6
 
 approach_own_goal_penalty:
-  enabled: false  # DÉSACTIVÉ: cause rewards -50 en 3v1 (adversaire contre-attaque)
-  reward: -10.0
+  enabled: true  # ACTIVÉ: prévient CSC
+  reward: -5.0   # Réduit à -5 (au lieu de -10) pour éviter trop de pénalités
   danger_zone_x: -0.6
 
 backward_movement_penalty:
