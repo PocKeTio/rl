@@ -618,6 +618,11 @@ class Trainer:
                 # Tracking des épisodes terminés
                 for env_idx in range(self.config.get("num_envs", 48)):
                     if done[env_idx]:
+                        # Debug: log premier épisode terminé
+                        if self.total_episodes_completed == 0:
+                            logger.info(f"🎯 First episode done! env_idx={env_idx}")
+                            logger.info(f"   done type: {type(done)}, done[{env_idx}]={done[env_idx]}")
+                        
                         # Épisode terminé - sauvegarder les stats
                         episode_return = self.episode_returns[env_idx]
                         episode_length = self.episode_lengths[env_idx]
@@ -648,8 +653,8 @@ class Trainer:
                                 self.total_draws += 1
                             
                             # Debug log (verbose)
-                            if self.total_episodes_completed % 100 == 1:
-                                logger.debug(f"✅ Score tracked: {score_tuple} (env {env_idx})")
+                            if self.total_episodes_completed <= 10:
+                                logger.info(f"✅ Score tracked: {score_tuple} (env {env_idx}, episode {self.total_episodes_completed})")
                         else:
                             # CRITICAL: Score extraction failed
                             # Log warning mais NE PAS utiliser fallback (trop imprécis)
