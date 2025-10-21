@@ -776,24 +776,31 @@ class Trainer:
             
             # Afficher les métriques de goals et winrate
             if update % self.config.get("log_interval", 10) == 0 and self.total_episodes_completed > 0:
-                winrate = (self.total_wins / self.total_episodes_completed) * 100
-                drawrate = (self.total_draws / self.total_episodes_completed) * 100
-                lossrate = (self.total_losses / self.total_episodes_completed) * 100
-                goals_per_game = self.total_goals_scored / self.total_episodes_completed
-                conceded_per_game = self.total_goals_conceded / self.total_episodes_completed
+                # Stats cumulatives
+                winrate_cumul = (self.total_wins / self.total_episodes_completed) * 100
+                drawrate_cumul = (self.total_draws / self.total_episodes_completed) * 100
+                lossrate_cumul = (self.total_losses / self.total_episodes_completed) * 100
+                goals_per_game_cumul = self.total_goals_scored / self.total_episodes_completed
+                conceded_per_game_cumul = self.total_goals_conceded / self.total_episodes_completed
                 
-                logger.info("\n📊 TRAINING METRICS (cumulative since start)")
-                logger.info(f"\n⚽ Goals:")
-                logger.info(f"  Scored:    {goals_per_game:.2f}/game")
-                logger.info(f"  Conceded:  {conceded_per_game:.2f}/game")
-                logger.info(f"\n🏆 Results:")
-                logger.info(f"  Winrate:   {winrate:.1f}% (cumulative)")
-                logger.info(f"  Drawrate:  {drawrate:.1f}%")
-                logger.info(f"  Lossrate:  {lossrate:.1f}%")
-                logger.info(f"\n🎯 Total:")
-                logger.info(f"  Episodes:  {self.total_episodes_completed}")
-                logger.info(f"  Wins:      {self.total_wins}")
-                logger.info(f"  Goals:     {self.total_goals_scored}\n")
+                # Stats sur 100 derniers épisodes (fenêtre glissante)
+                num_recent = len(self.recent_wins)
+                if num_recent > 0:
+                    winrate_recent = (sum(self.recent_wins) / num_recent) * 100
+                    drawrate_recent = (sum(self.recent_draws) / num_recent) * 100
+                    lossrate_recent = (sum(self.recent_losses) / num_recent) * 100
+                    
+                    logger.info("\n📊 TRAINING METRICS")
+                    logger.info(f"\n🎯 Last {num_recent} episodes:")
+                    logger.info(f"  Winrate:   {winrate_recent:.1f}%")
+                    logger.info(f"  Drawrate:  {drawrate_recent:.1f}%")
+                    logger.info(f"  Lossrate:  {lossrate_recent:.1f}%")
+                    
+                logger.info(f"\n📈 Cumulative (all {self.total_episodes_completed} episodes):")
+                logger.info(f"  Winrate:   {winrate_cumul:.1f}%")
+                logger.info(f"  Goals/game: {goals_per_game_cumul:.2f}")
+                logger.info(f"  Total wins: {self.total_wins}")
+                logger.info(f"  Total goals: {self.total_goals_scored}\n")
             
             # Vérifier le curriculum (changement de phase automatique)
             if self._should_advance_curriculum():
