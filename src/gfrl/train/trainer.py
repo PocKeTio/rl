@@ -622,6 +622,11 @@ class Trainer:
                         if self.total_episodes_completed == 0:
                             logger.info(f"🎯 First episode done! env_idx={env_idx}")
                             logger.info(f"   done type: {type(done)}, done[{env_idx}]={done[env_idx]}")
+                            logger.info(f"   info keys: {list(info.keys()) if isinstance(info, dict) else 'not dict'}")
+                            if isinstance(info, dict) and 'final_info' in info:
+                                logger.info(f"   final_info exists! Type: {type(info['final_info'])}")
+                                if isinstance(info['final_info'], (list, np.ndarray)) and len(info['final_info']) > env_idx:
+                                    logger.info(f"   final_info[{env_idx}]: {info['final_info'][env_idx]}")
                         
                         # Épisode terminé - sauvegarder les stats
                         episode_return = self.episode_returns[env_idx]
