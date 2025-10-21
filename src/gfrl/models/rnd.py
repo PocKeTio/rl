@@ -98,25 +98,32 @@ class RND:
         # Optimizer pour predictor
         self.optimizer = optim.Adam(self.predictor_network.parameters(), lr=learning_rate)
         
-        # Running stats pour normaliser observations (améliore stabilité)
+        # Running statistics pour normalisation (Welford's algorithm)
         self.obs_mean = torch.zeros(obs_dim, device=device)
         self.obs_std = torch.ones(obs_dim, device=device)
-        self.obs_count = 1e-4
+        self.obs_count = torch.tensor(1e-4, device=device)  # Éviter division par zéro
         
-        # Running stats pour normaliser intrinsic rewards
+        # Running statistics pour intrinsic rewards (proper variance tracking)
+        self.reward_mean = torch.zeros(1, device=device)
+        self.reward_m2 = torch.zeros(1, device=device)  # Sum of squared deviations
+        self.reward_count = torch.tensor(0.0, device=device)
         self.reward_std = torch.ones(1, device=device)
-        self.reward_count = 1e-4
     
     def normalize_obs(self, obs: torch.Tensor) -> torch.Tensor:
         """Normalise les observations avec running stats."""
         return (obs - self.obs_mean) / (self.obs_std + 1e-8)
     
     def update_obs_stats(self, obs: torch.Tensor):
-        """Met à jour les running stats des observations."""
+        """Met à jour les running stats des observations (Welford's algorithm)."""
         with torch.no_grad():
-            batch_mean = obs.mean(dim=0)
-            batch_std = obs.std(dim=0)
             batch_count = obs.shape[0]
+            
+            # Skip si batch trop petit (évite NaN avec unbiased=True)
+            if batch_count < 2:
+                return
+            
+            batch_mean = obs.mean(dim=0)
+            batch_std = obs.std(dim=0, unbiased=False)  # Biased pour Welford correct
             
             # Welford's online algorithm
             delta = batch_mean - self.obs_mean
@@ -146,13 +153,25 @@ class RND:
             target_features = self.target_network(obs_normalized)
             predicted_features = self.predictor_network(obs_normalized)
             
-            # MSE comme intrinsic reward
+            # MSE comme intrinsic reward (per observation)
             mse = (target_features - predicted_features).pow(2).mean(dim=-1)
             
-            # Update running std du MSE (variance réelle du batch)
-            if mse.numel() > 1:  # Besoin de plusieurs samples pour std
-                batch_mse_std = mse.std()
-                self.reward_std = 0.99 * self.reward_std + 0.01 * batch_mse_std
+            # Update running std du MSE avec Welford's algorithm (robust)
+            if mse.numel() > 1:  # Besoin de plusieurs samples
+                # Welford's algorithm pour variance online
+                for mse_val in mse.flatten():
+                    self.reward_count += 1
+                    delta = mse_val - self.reward_mean
+                    self.reward_mean += delta / self.reward_count
+                    delta2 = mse_val - self.reward_mean
+                    self.reward_m2 += delta * delta2
+                
+                # Calculer std avec clamp pour éviter collapse
+                if self.reward_count > 1:
+                    variance = self.reward_m2 / self.reward_count
+                    self.reward_std = torch.sqrt(variance + 1e-8)
+                    # CRITICAL: clamp pour éviter explosion/collapse
+                    self.reward_std = torch.clamp(self.reward_std, min=0.1, max=10.0)
             
             # Normaliser par std (évite rewards explosifs)
             intrinsic_reward = mse / (self.reward_std + 1e-8)
@@ -204,16 +223,25 @@ class RND:
             'obs_mean': self.obs_mean,
             'obs_std': self.obs_std,
             'obs_count': self.obs_count,
+            'reward_mean': self.reward_mean,
+            'reward_m2': self.reward_m2,
             'reward_std': self.reward_std,
             'reward_count': self.reward_count,
         }
     
     def load_state_dict(self, state_dict):
-        """Chargement depuis checkpoint."""
+        """Chargement depuis checkpoint (avec backward compatibility)."""
         self.predictor_network.load_state_dict(state_dict['predictor'])
         self.optimizer.load_state_dict(state_dict['optimizer'])
         self.obs_mean = state_dict['obs_mean']
         self.obs_std = state_dict['obs_std']
         self.obs_count = state_dict['obs_count']
+        
+        # Backward compatibility: anciens checkpoints n'ont pas reward_mean/m2
+        if 'reward_mean' in state_dict:
+            self.reward_mean = state_dict['reward_mean']
+        if 'reward_m2' in state_dict:
+            self.reward_m2 = state_dict['reward_m2']
+        
         self.reward_std = state_dict['reward_std']
         self.reward_count = state_dict['reward_count']

@@ -381,6 +381,25 @@ class Trainer:
             )
             logger.info("Evaluator recreated successfully")
         
+        # CRITICAL: Reset RND stats pour nouvel environnement
+        if self.use_rnd and self.rnd is not None:
+            logger.info("=" * 60)
+            logger.info("⚠️  RESETTING RND for new curriculum phase")
+            logger.info("=" * 60)
+            
+            from ..models.rnd import RND
+            
+            # Recreate RND from scratch (obs distribution change)
+            self.rnd = RND(
+                obs_dim=self.obs_dim,
+                output_dim=self.config.get("rnd_output_dim", 128),
+                hidden_dim=self.config.get("rnd_hidden_dim", 256),
+                learning_rate=self.config.get("rnd_lr", 1e-4),
+                device=self.device,
+            )
+            logger.info("✅ RND module recreated from scratch")
+            logger.info(f"   New obs distribution will be learned from {new_env_name}")
+        
         logger.info("Curriculum phase advanced successfully!")
     
     def _extract_positions_from_obs(self, env_idx: int = 0) -> Tuple[np.ndarray, np.ndarray]:
