@@ -93,14 +93,20 @@ class Trainer:
         self.metrics_tracker = None
         self.episode_trackers = None
         
-        # Stats manuelles pour logging
-        self.total_goals_scored = 0
-        self.total_goals_conceded = 0
-        self.total_own_goals = 0
+        # Stats manuelles pour logging (cumulatives)
+        self.total_episodes_completed = 0
         self.total_wins = 0
         self.total_draws = 0
         self.total_losses = 0
-        self.total_episodes_completed = 0
+        self.total_goals_scored = 0
+        self.total_goals_conceded = 0
+        self.total_own_goals = 0
+        
+        # Stats fenêtre glissante pour curriculum (100 derniers épisodes)
+        from collections import deque
+        self.recent_wins = deque(maxlen=100)
+        self.recent_draws = deque(maxlen=100)
+        self.recent_losses = deque(maxlen=100)
         
         # Tracking manuel des épisodes (par env)
         num_envs = self.config.get("num_envs", 48)
@@ -280,31 +286,34 @@ class Trainer:
         
         # Vérifier les success criteria (PRIORITÉ)
         success_criteria = current_phase.get("success_criteria", {})
-        if success_criteria and self.metrics_tracker is not None:
-            stats = self.metrics_tracker.get_stats()
-            if stats:
-                # Vérifier qu'on a assez d'épisodes dans la fenêtre glissante
-                num_episodes_in_window = len(self.metrics_tracker.wins) if hasattr(self.metrics_tracker, 'wins') else 0
-                min_episodes = success_criteria.get("min_episodes", 50)
-                
-                # DEBUG: Log détaillé
+        if success_criteria:
+            # Calculer winrate sur les 100 derniers épisodes
+            num_episodes_in_window = len(self.recent_wins)
+            min_episodes = success_criteria.get("min_episodes", 50)
+            
+            if num_episodes_in_window < min_episodes:
+                # Pas assez d'épisodes dans cette phase pour évaluer
                 logger.debug(f"Curriculum check - Phase {self.current_phase_idx + 1}:")
                 logger.debug(f"  Episodes in window: {num_episodes_in_window} (min required: {min_episodes})")
-                logger.debug(f"  Current winrate: {stats.get('winrate', 0):.1f}% (target: {success_criteria.get('winrate_min', 0) * 100:.1f}%)")
-                
-                if num_episodes_in_window < min_episodes:
-                    # Pas assez d'épisodes dans cette phase pour évaluer
-                    logger.debug(f"  -> Not enough episodes yet, staying in phase")
-                    return False
-                
-                # Vérifier winrate
-                winrate_min = success_criteria.get("winrate_min", None)
-                if winrate_min and stats.get('winrate', 0) >= winrate_min * 100:
-                    logger.info(f"Curriculum: Phase {self.current_phase_idx + 1} success criteria met (winrate >= {winrate_min * 100}%)")
-                    logger.info(f"  Evaluated on {num_episodes_in_window} episodes in this phase")
-                    return True
-                else:
-                    logger.debug(f"  -> Winrate not reached yet, staying in phase")
+                logger.debug(f"  -> Not enough episodes yet, staying in phase")
+                return False
+            
+            # Calculer winrate sur fenêtre glissante
+            recent_winrate = (sum(self.recent_wins) / num_episodes_in_window) * 100 if num_episodes_in_window > 0 else 0
+            winrate_min = success_criteria.get("winrate_min", None)
+            
+            # DEBUG: Log détaillé
+            logger.debug(f"Curriculum check - Phase {self.current_phase_idx + 1}:")
+            logger.debug(f"  Episodes in window: {num_episodes_in_window} (last 100)")
+            logger.debug(f"  Current winrate: {recent_winrate:.1f}% (target: {winrate_min * 100:.1f}%)")
+            
+            if winrate_min and recent_winrate >= winrate_min * 100:
+                logger.info(f"✅ Curriculum: Phase {self.current_phase_idx + 1} SUCCESS!")
+                logger.info(f"   Winrate: {recent_winrate:.1f}% >= {winrate_min * 100:.1f}% (target)")
+                logger.info(f"   Evaluated on last {num_episodes_in_window} episodes")
+                return True
+            else:
+                logger.debug(f"  -> Winrate {recent_winrate:.1f}% < {winrate_min * 100:.1f}% (target), staying in phase")
         
         # Vérifier la durée (TIMEOUT seulement, pas critère d'avancement)
         duration_steps = current_phase.get("duration_steps", float('inf'))
@@ -358,6 +367,12 @@ class Trainer:
         if self.metrics_tracker is not None:
             logger.info("Resetting metrics for new phase...")
             self.metrics_tracker.reset()
+        
+        # RESET sliding window stats pour curriculum
+        logger.info("Resetting sliding window stats for new phase...")
+        self.recent_wins.clear()
+        self.recent_draws.clear()
+        self.recent_losses.clear()
         
         # RESET EPISODE TRACKERS : Réinitialiser les trackers individuels
         if self.episode_trackers is not None:
@@ -656,13 +671,22 @@ class Trainer:
                             self.total_goals_scored += goals_scored
                             self.total_goals_conceded += goals_conceded
                             
-                            # Update W/D/L
+                            # Update W/D/L (cumulative + sliding window)
                             if goals_scored > goals_conceded:
                                 self.total_wins += 1
+                                self.recent_wins.append(1)
+                                self.recent_draws.append(0)
+                                self.recent_losses.append(0)
                             elif goals_scored < goals_conceded:
                                 self.total_losses += 1
+                                self.recent_wins.append(0)
+                                self.recent_draws.append(0)
+                                self.recent_losses.append(1)
                             else:
                                 self.total_draws += 1
+                                self.recent_wins.append(0)
+                                self.recent_draws.append(1)
+                                self.recent_losses.append(0)
                             
                             # Debug log (verbose)
                             if self.total_episodes_completed <= 10:
