@@ -118,22 +118,32 @@ class RND:
         with torch.no_grad():
             batch_count = obs.shape[0]
             
-            # Skip si batch trop petit (évite NaN avec unbiased=True)
-            if batch_count < 2:
-                return
+            if batch_count == 0:
+                return  # Rien à faire
             
             batch_mean = obs.mean(dim=0)
-            batch_std = obs.std(dim=0, unbiased=False)  # Biased pour Welford correct
             
             # Welford's online algorithm
             delta = batch_mean - self.obs_mean
             self.obs_count += batch_count
             self.obs_mean += delta * batch_count / self.obs_count
             
-            m_a = self.obs_std.pow(2) * (self.obs_count - batch_count)
-            m_b = batch_std.pow(2) * batch_count
-            M2 = m_a + m_b + delta.pow(2) * (self.obs_count - batch_count) * batch_count / self.obs_count
-            self.obs_std = torch.sqrt(M2 / self.obs_count)
+            # Update variance (gère batch_count=1 correctement)
+            if batch_count == 1:
+                # Avec 1 sample: std=0, mais on peut update M2 via delta
+                # M2 += delta * delta2 où delta2 = (sample - new_mean)
+                delta2 = batch_mean - self.obs_mean
+                M2_increment = delta * delta2 * (self.obs_count - 1)
+                m_a = self.obs_std.pow(2) * (self.obs_count - 1)
+                M2 = m_a + M2_increment
+            else:
+                # Batch >= 2: calcul standard
+                batch_std = obs.std(dim=0, unbiased=False)  # Biased pour Welford
+                m_a = self.obs_std.pow(2) * (self.obs_count - batch_count)
+                m_b = batch_std.pow(2) * batch_count
+                M2 = m_a + m_b + delta.pow(2) * (self.obs_count - batch_count) * batch_count / self.obs_count
+            
+            self.obs_std = torch.sqrt(M2 / self.obs_count + 1e-8)
     
     def compute_intrinsic_reward(self, obs: torch.Tensor) -> torch.Tensor:
         """
@@ -157,7 +167,8 @@ class RND:
             mse = (target_features - predicted_features).pow(2).mean(dim=-1)
             
             # Update running std du MSE avec Welford's algorithm (robust)
-            if mse.numel() > 1:  # Besoin de plusieurs samples
+            # IMPORTANT: Toujours update, même avec 1 sample (compatibilité num_envs=1)
+            if mse.numel() > 0:
                 # Welford's algorithm pour variance online
                 for mse_val in mse.flatten():
                     self.reward_count += 1
@@ -167,6 +178,7 @@ class RND:
                     self.reward_m2 += delta * delta2
                 
                 # Calculer std avec clamp pour éviter collapse
+                # Note: reward_count > 1 nécessaire pour variance non-nulle
                 if self.reward_count > 1:
                     variance = self.reward_m2 / self.reward_count
                     self.reward_std = torch.sqrt(variance + 1e-8)
