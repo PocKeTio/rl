@@ -623,10 +623,17 @@ class Trainer:
                             logger.info(f"🎯 First episode done! env_idx={env_idx}")
                             logger.info(f"   done type: {type(done)}, done[{env_idx}]={done[env_idx]}")
                             logger.info(f"   info keys: {list(info.keys()) if isinstance(info, dict) else 'not dict'}")
-                            if isinstance(info, dict) and 'final_info' in info:
-                                logger.info(f"   final_info exists! Type: {type(info['final_info'])}")
-                                if isinstance(info['final_info'], (list, np.ndarray)) and len(info['final_info']) > env_idx:
-                                    logger.info(f"   final_info[{env_idx}]: {info['final_info'][env_idx]}")
+                            
+                            # Check raw_score vs _raw_score
+                            if isinstance(info, dict):
+                                if 'raw_score' in info:
+                                    logger.info(f"   raw_score: {info['raw_score']}")
+                                if '_raw_score' in info:
+                                    logger.info(f"   _raw_score: {info['_raw_score']}")
+                                if 'final_info' in info:
+                                    logger.info(f"   final_info exists! Type: {type(info['final_info'])}")
+                                    if isinstance(info['final_info'], (list, np.ndarray)) and len(info['final_info']) > env_idx:
+                                        logger.info(f"   final_info[{env_idx}]: {info['final_info'][env_idx]}")
                         
                         # Épisode terminé - sauvegarder les stats
                         episode_return = self.episode_returns[env_idx]
