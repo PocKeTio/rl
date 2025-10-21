@@ -659,6 +659,14 @@ class Trainer:
                                 logger.warning(f"   Info type: {type(info)}")
                                 if isinstance(info, dict):
                                     logger.warning(f"   Info keys: {list(info.keys())[:10]}")
+                                    # Debug: afficher contenu de raw_score si existe
+                                    if 'raw_score' in info:
+                                        logger.warning(f"   raw_score type: {type(info['raw_score'])}")
+                                        logger.warning(f"   raw_score value: {info['raw_score']}")
+                                    if 'final_info' in info:
+                                        logger.warning(f"   final_info type: {type(info['final_info'])}")
+                                        if isinstance(info['final_info'], (list, np.ndarray)) and len(info['final_info']) > env_idx:
+                                            logger.warning(f"   final_info[{env_idx}]: {info['final_info'][env_idx]}")
                                 logger.warning("   → Goals/W/D/L counters may be inaccurate!")
                             
                             # Compter comme draw par défaut (safe assumption)
