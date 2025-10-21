@@ -25,10 +25,10 @@ goal_distance:
   
 # ========== SHOT ANY (feedback basique pour tirer) ==========
 shot_any:
-  enabled: false
-  base_reward: 2.0       # Modéré: encourage tir
-  possession_bonus: 2.0  # +2 si possession
-  offensive_bonus: 3.0   # +3 si zone offensive (x>0.5)
+  enabled: true
+  base_reward: 15.0      # MASSIF: encourage découverte de l'action SHOOT
+  possession_bonus: 5.0  # +5 si possession
+  offensive_bonus: 10.0  # +10 si zone offensive (x>0.5)
   cooldown_steps: 10
 
 # ========== SHOT ATTEMPTS (conditions ULTRA-RELAXÉES) ==========
