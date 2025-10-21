@@ -103,7 +103,6 @@ class Trainer:
         self.total_own_goals = 0
         
         # Stats fenêtre glissante pour curriculum (100 derniers épisodes)
-        from collections import deque
         self.recent_wins = deque(maxlen=100)
         self.recent_draws = deque(maxlen=100)
         self.recent_losses = deque(maxlen=100)
