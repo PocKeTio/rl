@@ -98,25 +98,37 @@ goal_distance: +0.5 par step (~100 total)
 
 ## ✅ Solutions appliquées
 
-### 1. Fonction robuste `_extract_score_from_info()`
+### 1. Fonction robuste `_extract_score_from_info()` avec priorités
 
 ```python
 def _extract_score_from_info(self, info, env_idx, done_mask):
-    """Gère les 3 formats possibles."""
+    """Gère 4 méthodes d'extraction avec priorités."""
     
-    # Format 1: AsyncVectorEnv avec final_info (standard Gymnasium)
+    # PRIORITÉ 1: Direct call() sur l'env (le plus fiable)
+    if done_mask[env_idx]:
+        try:
+            if hasattr(self.envs, 'call'):
+                scores = self.envs.call('get_current_score')
+                if scores and len(scores) > env_idx:
+                    score = scores[env_idx]
+                    if len(score) >= 2:
+                        return (int(score[0]), int(score[1]))
+        except:
+            pass  # Silent fail, essayer autres méthodes
+    
+    # PRIORITÉ 2: AsyncVectorEnv avec final_info (standard Gymnasium)
     if done_mask[env_idx] and 'final_info' in info:
         final_info = info['final_info'][env_idx]
         if final_info and 'raw_score' in final_info:
             return (int(final_info['raw_score'][0]), 
                     int(final_info['raw_score'][1]))
     
-    # Format 2: info[env_idx]['raw_score'] (custom dict)
+    # PRIORITÉ 3: info[env_idx]['raw_score'] (custom dict)
     if env_idx in info and 'raw_score' in info[env_idx]:
         score = info[env_idx]['raw_score']
         return (int(score[0]), int(score[1]))
     
-    # Format 3: info['raw_score'][env_idx] (vectorized)
+    # PRIORITÉ 4: info['raw_score'][env_idx] (vectorized)
     if 'raw_score' in info:
         score = info['raw_score'][env_idx]
         return (int(score[0]), int(score[1]))
@@ -125,6 +137,7 @@ def _extract_score_from_info(self, info, env_idx, done_mask):
 ```
 
 **Avantages:**
+- ✅ call() direct = le plus fiable (bypass info dict)
 - ✅ Gère AsyncVectorEnv correctement
 - ✅ Compatible avec anciens formats
 - ✅ Retourne None si pas trouvé (fail-safe)
@@ -156,17 +169,23 @@ if not tracked:
     # ... 15 lignes
 ```
 
-**Après (10 lignes):**
+**Après (15 lignes - plus robuste):**
 ```python
 score_tuple = self._extract_score_from_info(info, env_idx, done)
 
 if score_tuple:
     goals_scored, goals_conceded = score_tuple
     self.total_goals_scored += goals_scored
-    # ...
+    self.total_goals_conceded += goals_conceded
+    # Update W/D/L...
+    
+    # Debug log
+    if self.total_episodes_completed % 100 == 1:
+        logger.debug(f"✅ Score tracked: {score_tuple}")
 else:
-    # Fallback avec warning
-    self._estimate_results_from_return(episode_return)
+    # CRITICAL: Pas de fallback imprécis
+    logger.warning(f"⚠️ Failed to extract score")
+    self.total_draws += 1  # Safe assumption
 ```
 
 ---

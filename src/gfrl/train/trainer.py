@@ -629,7 +629,7 @@ class Trainer:
                         # Football stats pour cet épisode
                         football_ep_stats = self.football_stats.on_episode_done(env_idx)
                         
-                        # Extraire score depuis info (gère AsyncVectorEnv formats)
+                        # Extraire score depuis info (méthode robuste avec call() priority)
                         score_tuple = self._extract_score_from_info(info, env_idx, done)
                         
                         if score_tuple is not None:
@@ -646,14 +646,23 @@ class Trainer:
                                 self.total_losses += 1
                             else:
                                 self.total_draws += 1
-                        else:
-                            # Fallback: log warning première fois seulement
-                            if self.total_episodes_completed == 1:
-                                logger.warning("⚠️ raw_score not found in info - using fallback estimation")
-                                logger.warning(f"   info keys: {list(info.keys()) if isinstance(info, dict) else 'not a dict'}")
                             
-                            # Estimation depuis return (moins fiable)
-                            self._estimate_results_from_return(episode_return)
+                            # Debug log (verbose)
+                            if self.total_episodes_completed % 100 == 1:
+                                logger.debug(f"✅ Score tracked: {score_tuple} (env {env_idx})")
+                        else:
+                            # CRITICAL: Score extraction failed
+                            # Log warning mais NE PAS utiliser fallback (trop imprécis)
+                            if self.total_episodes_completed <= 5:
+                                logger.warning(f"⚠️ Failed to extract score for env {env_idx}")
+                                logger.warning(f"   Episode: {self.total_episodes_completed}")
+                                logger.warning(f"   Info type: {type(info)}")
+                                if isinstance(info, dict):
+                                    logger.warning(f"   Info keys: {list(info.keys())[:10]}")
+                                logger.warning("   → Goals/W/D/L counters may be inaccurate!")
+                            
+                            # Compter comme draw par défaut (safe assumption)
+                            self.total_draws += 1
                         
                         # Reset pour ce env
                         self.episode_returns[env_idx] = 0.0
@@ -940,13 +949,28 @@ class Trainer:
     
     def _extract_score_from_info(self, info: Dict, env_idx: int, done_mask: np.ndarray) -> Optional[tuple]:
         """
-        Extrait le score [goals_scored, goals_conceded] depuis info.
-        Gère les 3 formats possibles de gymnasium.vector.AsyncVectorEnv.
+        Extrait le score [goals_scored, goals_conceded] de manière robuste.
+        Priorité: call() > final_info > info dict > None
         
         Returns:
             (goals_scored, goals_conceded) ou None si pas trouvé
         """
-        # Format 1: Gymnasium AsyncVectorEnv avec final_info (quand done=True)
+        score = None
+        
+        # PRIORITÉ 1: Direct call() sur l'env (le plus fiable)
+        if done_mask[env_idx]:
+            try:
+                if hasattr(self.envs, 'call'):
+                    scores = self.envs.call('get_current_score')
+                    if scores and isinstance(scores, (list, tuple)) and len(scores) > env_idx:
+                        score = scores[env_idx]
+                        if isinstance(score, (list, tuple, np.ndarray)) and len(score) >= 2:
+                            return (int(score[0]), int(score[1]))
+            except Exception as e:
+                # Silent fail, essayer autres méthodes
+                pass
+        
+        # PRIORITÉ 2: Gymnasium AsyncVectorEnv avec final_info (standard)
         if done_mask[env_idx] and isinstance(info, dict) and 'final_info' in info:
             final_infos = info['final_info']
             if isinstance(final_infos, (list, np.ndarray)) and len(final_infos) > env_idx:
@@ -956,7 +980,7 @@ class Trainer:
                     if isinstance(score, (list, tuple, np.ndarray)) and len(score) >= 2:
                         return (int(score[0]), int(score[1]))
         
-        # Format 2: info[env_idx]['raw_score'] (custom format)
+        # PRIORITÉ 3: info[env_idx]['raw_score'] (custom format)
         if isinstance(info, dict) and env_idx in info:
             env_info = info[env_idx]
             if isinstance(env_info, dict) and 'raw_score' in env_info:
@@ -964,7 +988,7 @@ class Trainer:
                 if isinstance(score, (list, tuple, np.ndarray)) and len(score) >= 2:
                     return (int(score[0]), int(score[1]))
         
-        # Format 3: info['raw_score'][env_idx] (vectorized format)
+        # PRIORITÉ 4: info['raw_score'][env_idx] (vectorized format)
         if isinstance(info, dict) and 'raw_score' in info:
             raw_scores = info['raw_score']
             if hasattr(raw_scores, '__getitem__') and len(raw_scores) > env_idx:
