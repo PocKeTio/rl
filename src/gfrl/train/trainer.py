@@ -965,9 +965,14 @@ class Trainer:
                     if scores and isinstance(scores, (list, tuple)) and len(scores) > env_idx:
                         score = scores[env_idx]
                         if isinstance(score, (list, tuple, np.ndarray)) and len(score) >= 2:
+                            # Debug log première fois
+                            if self.total_episodes_completed == 1:
+                                logger.info(f"✅ Score via call(): {score}")
                             return (int(score[0]), int(score[1]))
             except Exception as e:
-                # Silent fail, essayer autres méthodes
+                # Log error première fois
+                if self.total_episodes_completed == 1:
+                    logger.warning(f"call() failed: {e}")
                 pass
         
         # PRIORITÉ 2: Gymnasium AsyncVectorEnv avec final_info (standard)
@@ -978,6 +983,9 @@ class Trainer:
                 if final_info is not None and isinstance(final_info, dict) and 'raw_score' in final_info:
                     score = final_info['raw_score']
                     if isinstance(score, (list, tuple, np.ndarray)) and len(score) >= 2:
+                        # Debug log première fois
+                        if self.total_episodes_completed == 1:
+                            logger.info(f"✅ Score via final_info: {score}")
                         return (int(score[0]), int(score[1]))
         
         # PRIORITÉ 3: info[env_idx]['raw_score'] (custom format)
