@@ -1,0 +1,49 @@
+# Configuration TRAINING 5v5 - Nettoyée (seulement paramètres utilisés)
+
+# ========== HARDWARE ==========
+device: "cuda"
+amp_enabled: true
+
+# ========== ENVIRONNEMENT ==========
+num_envs: 24
+rollout_len: 256
+total_timesteps: 50000000  # 50M steps
+frame_skip: 1
+mirror: false
+running_norm: false  # Normalisation des observations (désactivé pour cohérence train/eval)
+
+# PPO HYPERPARAMETERS (optimisé pour GRF)
+gamma: 0.997              # GRF paper
+lambda_gae: 0.95          # Standard
+clip_epsilon: 0.12        # GRF paper (0.115)
+value_clip_epsilon: 0.2   # OK
+target_kl: 0.02           # OK
+value_coef: 0.5           # OK
+max_grad_norm: 0.76       # GRF paper
+
+# ENTROPY ANNEALING (MODÉRÉ pour équilibre exploration/exploitation)
+entropy_coef_start: 0.02  # Modéré (standard PPO)
+entropy_coef_end: 0.002   # Réduit progressivement
+entropy_anneal_steps: 20000000  # 20M steps
+
+# OPTIMIZATION
+learning_rate: 0.0003  # Plus rapide pour apprentissage initial
+
+# ========== BATCH & OPTIMIZATION ==========
+minibatch_size: 3072  # 50% du batch (num_envs * rollout_len = 6144)
+ppo_epochs: 4
+
+# ========== MODEL ARCHITECTURE ==========
+hidden_size: 512  # MLP hidden size
+lstm_hidden_size: 128
+lstm_num_layers: 1
+
+# ========== CHECKPOINTING ==========
+save_freq: 25000
+
+# ========== REWARDS & CURRICULUM ==========
+reward_config: "configs/rewards_dense.yaml"
+curriculum_config: "configs/curriculum_5v5.yaml"
+
+# ========== LOGGING ==========
+log_interval: 5

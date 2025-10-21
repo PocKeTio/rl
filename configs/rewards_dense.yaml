@@ -1,0 +1,153 @@
+# REWARDS STANDARDS ACADÉMIQUES - Approche équilibrée
+# Philosophy: Goal reward >> Shaping rewards (ratio 10:1 minimum)
+
+# ========== GOALS (DOMINANT SIGNAL) ==========
+goal_scored: 100.0         # DOMINANT (académique: 20-100)
+goal_conceded: -10.0       # Modéré
+own_goal: -50.0           # Fort pour CSC
+
+# ========== BALL POSSESSION ==========
+ball_possession:
+  enabled: false  # Désactivé: crée optimum local
+  reward_per_step: 0.0
+  
+# ========== PLAYER MOVEMENT (DÉSACTIVÉ: trop complexe) ==========
+player_movement:
+  enabled: false
+  forward_bonus: 0.0
+  idle_penalty: 0.0
+
+# ========== GOAL DISTANCE (guidance SIMPLE vers but) ==========
+goal_distance:
+  enabled: true
+  reward_scale: 1.0      # SIMPLE: guidance basique
+  normalize: true
+  
+# ========== SHOT ANY (feedback basique pour tirer) ==========
+shot_any:
+  enabled: false
+  base_reward: 2.0       # Modéré: encourage tir
+  possession_bonus: 2.0  # +2 si possession
+  offensive_bonus: 3.0   # +3 si zone offensive (x>0.5)
+  cooldown_steps: 10
+
+# ========== SHOT ATTEMPTS (conditions ULTRA-RELAXÉES) ==========
+shot_attempt:
+  enabled: true
+  reward: 10.0   # FORT pour encourager tir
+  require_possession: false
+  min_x_position: 0.0  # N'importe où
+  max_y_distance: 1.0  # N'importe où
+  max_distance_from_goal: 10.0  # N'importe où
+  cooldown_steps: 10
+  
+shot_on_target:
+  enabled: false         # DÉSACTIVÉ: GRF ne fournit pas cette info
+  reward: 0.0
+  
+# ========== PASS (encourage les passes) ==========
+successful_pass:
+  enabled: true
+  reward: 0.08           # Académique: 0.05-0.1
+  min_distance: 0.1
+  min_x_progress: 0.05
+  cooldown_steps: 5
+pass_under_pressure_bonus:
+  enabled: true
+  reward: 0.15           # Académique: 0.1-0.2
+pressure_distance: 0.15
+  
+# ========== TACKLE/INTERCEPTION (défense) ==========
+ball_recovery:
+  enabled: true
+  reward: 0.1            # Subtil (sera annealé)
+  
+ball_lost:
+  enabled: true
+  reward: -0.3           # Pénalité base
+  danger_zone_penalty: -0.5  # Extra si x < -0.6 (zone défensive)
+  attacking_zone_penalty: -0.2  # Extra si x > 0.5 (perd en attaquant)
+  
+successful_tackle:
+  enabled: true
+  reward: 0.2            # Modéré
+  
+# ========== DRIBBLE (progression avec ballon) ==========
+dribble_progress:
+  enabled: false  # Désactivé: redondant avec goal_distance
+  reward_scale: 0.0
+
+# ========== PENALTY BOX (milestone bonus) ==========
+penalty_box_bonus:
+  enabled: true
+  reward_on_entry: 20.0  # TRÈS FORT
+  reward_per_step: 0.0
+  min_x: 0.7
+  require_possession: true
+  
+# ========== PENALTIES ANTI-CSC (PRIORITÉ ABSOLUE) ==========
+# 🔥 MALUS pour actions dangereuses EN ZONE DANGEREUSE UNIQUEMENT (x < -0.6)
+# Équipe attaque vers x=+1, défend x=-1
+
+dangerous_shot_penalty:
+  enabled: true
+  reward: -20.0          # 🔥 FORT : Tir vers son propre but = très mauvais
+  danger_zone_x: -0.6    # Zone dangereuse (proche de notre but)
+  angle_threshold: 0.7   # Dot product: direction vers propre but (cos > 0.7 ≈ 45°)
+
+dangerous_pass_penalty:
+  enabled: false  # DÉSACTIVÉ: passe arrière peut être stratégique en 3v1
+  reward: -15.0
+  danger_zone_x: -0.6
+
+approach_own_goal_penalty:
+  enabled: false  # DÉSACTIVÉ: cause rewards -50 en 3v1 (adversaire contre-attaque)
+  reward: -10.0
+  danger_zone_x: -0.6
+
+backward_movement_penalty:
+  enabled: false         # DÉSACTIVÉ : redondant avec approach_own_goal_penalty
+  reward: -5.0
+  
+sideline_penalty:
+  enabled: false  # DÉSACTIVÉ: contribution mineure mais évite rewards négatifs
+  reward: -0.02
+  y_threshold: 0.38
+
+# ========== PENALTIES (éviter comportements stupides) ==========
+out_of_bounds:
+  enabled: true
+  penalty: -100.0  # CATASTROPHIQUE: doit absolument éviter!
+  x_max: 1.01
+  x_min: -1.0
+  y_max: 0.42
+  
+yellow_card:
+  enabled: true
+  penalty: -0.5
+  
+red_card:
+  enabled: true
+  penalty: -2.0
+  
+# ========== TIME PENALTY (DÉSACTIVÉ: trop subtil) ==========
+time_penalty:
+  enabled: false
+  penalty_per_step: 0.0
+  
+# ========== SHAPING (DÉSACTIVÉ pour apprentissage rapide) ==========
+shaping:
+  enabled: false  # DÉSACTIVÉ: pas d'annealing, multiplier = 1.0 constant
+  start_weight: 1.0
+  end_weight: 1.0  # Pas d'annealing
+  anneal_steps: 50000000  # Très lent (50M steps)
+  
+# ========== WIN/DRAW/LOSS (sparse) ==========
+win_bonus: 5.0           # Augmenté pour renforcer signal
+draw_bonus: 0.0
+loss_penalty: 0.0  # Pas de pénalité (déjà -goal_conceded)
+
+# ========== NORMALIZATION ==========
+normalize_rewards: true
+clip_rewards: true
+clip_range: [-100.0, 100.0]  # Cohérent avec goal_scored = 100.0

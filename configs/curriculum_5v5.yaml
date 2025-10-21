@@ -1,0 +1,87 @@
+# Curriculum Learning - PROGRESSION DIRECTE VERS 5v5
+# Objectif : Apprentissage direct sur situations de jeu réelles
+
+phases:
+  # Phase 1 : 3v1 WITH KEEPER (3 attaquants vs 1 défenseur + gardien)
+  - name: "3_vs_1_with_keeper"
+    env_name: "academy_3_vs_1_with_keeper"
+    duration_steps: 50000000  # 5M steps
+    success_criteria:
+      winrate_min: 0.50  # 50% de réussite
+      min_episodes: 100
+    opponent_mix:
+      built_in: 1.0
+  
+  # Phase 2 : 3v2 WITH KEEPER (3 attaquants vs 2 défenseurs + gardien)
+  - name: "3_vs_2_with_keeper"
+    env_name: "academy_3_vs_2_with_keeper"
+    duration_steps: 50000000  # 5M steps
+    success_criteria:
+      winrate_min: 0.40  # 40% de réussite
+      min_episodes: 100
+    opponent_mix:
+      built_in: 1.0
+  
+  # Phase 3 : 3v3 WITH KEEPER (3 attaquants vs 3 défenseurs + gardien)
+  - name: "3_vs_3_with_keeper"
+    env_name: "academy_3_vs_3_with_keeper"
+    duration_steps: 50000000  # 5M steps
+    success_criteria:
+      winrate_min: 0.35  # 35% de réussite
+      min_episodes: 100
+    opponent_mix:
+      built_in: 1.0
+  
+  # Phase 4 : 1v1 EASY (situations 1v1)
+  - name: "1_vs_1_easy"
+    env_name: "1_vs_1_easy"
+    duration_steps: 50000000  # 5M steps
+    success_criteria:
+      winrate_min: 0.40  # 40% winrate
+      min_episodes: 100
+    opponent_mix:
+      built_in: 1.0
+  
+  # Phase 5 : 5v5 EASY (match 5v5 facile)
+  - name: "5_vs_5_easy"
+    env_name: "5_vs_5_easy"
+    duration_steps: 100000000  # 10M steps
+    success_criteria:
+      winrate_min: 0.40  # 40% winrate
+      min_episodes: 100
+    opponent_mix:
+      built_in: 1.0
+  
+  # Phase 6 : 5v5 MEDIUM (match 5v5 moyen)
+  - name: "5_vs_5_medium"
+    env_name: "5_vs_5_medium"
+    duration_steps: 100000000  # 10M steps
+    success_criteria:
+      winrate_min: 0.35  # 35% winrate
+      min_episodes: 100
+    opponent_mix:
+      built_in: 1.0
+  
+  # Phase 7 : 5v5 HARD (match 5v5 difficile)
+  - name: "5_vs_5_hard"
+    env_name: "5_vs_5_hard"
+    duration_steps: 150000000  # 15M steps
+    success_criteria:
+      winrate_min: 0.30  # 30% winrate
+      min_episodes: 100
+    opponent_mix:
+      built_in: 1.0
+
+# Transition automatique avec critères stricts
+auto_advance: true
+fallback_on_failure: false
+
+# Validation stricte
+validation:
+  enabled: true
+  window_size: 100  # Évaluer sur 100 derniers épisodes
+  check_frequency: 10000  # Vérifier tous les 10K steps
+
+# Self-play (désactivé)
+self_play:
+  enabled: false

@@ -1,0 +1,64 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+/env/
+ENV/
+.venv/
+.venv*/
+*-env/
+football-env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# PyTorch
+*.pth
+*.pt
+
+# Logs et résultats (garder la structure mais pas le contenu)
+logs/**/*
+!logs/.gitkeep
+checkpoints/**/*
+!checkpoints/.gitkeep
+results/**/*
+!results/.gitkeep
+
+# Données temporaires
+*.tmp
+*.cache
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Videos
+*.mp4
+*.avi

@@ -1,0 +1,58 @@
+# CONFIGURATION SPARSE - L'agent apprend SEUL
+# Philosophy: Minimal rewards + forte exploration = découverte autonome
+
+# ========== HARDWARE ==========
+device: "cuda"
+amp_enabled: true
+
+# ========== ENVIRONNEMENT ==========
+num_envs: 24
+rollout_len: 256
+total_timesteps: 100000000  # 100M steps (long training)
+frame_skip: 1
+mirror: false
+running_norm: false
+
+# ========== PPO HYPERPARAMETERS ==========
+gamma: 0.997
+lambda_gae: 0.95
+clip_epsilon: 0.2            # Standard PPO (Kurach et al. 2020)
+value_clip_epsilon: 0.2
+target_kl: 0.02
+value_coef: 0.5
+max_grad_norm: 0.76
+
+# ========== ENTROPY (RND gère state-space, entropy gère action-space) ==========
+# RND et entropy sont complémentaires, pas substituables
+entropy_coef_start: 0.02  # Standard PPO avec RND (pas trop haut)
+entropy_coef_end: 0.002   # Décroît progressivement
+entropy_anneal_steps: 50000000  # Anneal lent sur 50M steps
+
+# ========== OPTIMIZATION ==========
+learning_rate: 0.0003  # Standard PPO (plus rapide que 0.0001)
+
+# ========== BATCH & OPTIMIZATION ==========
+minibatch_size: null  # Full batch pour préserver LSTM states
+ppo_epochs: 4
+
+# ========== MODEL ARCHITECTURE ==========
+hidden_size: 512
+lstm_hidden_size: 128
+lstm_num_layers: 1
+
+# ========== RND (CURIOSITY) ==========
+use_rnd: true                 # Active RND pour curiosity-driven exploration
+rnd_beta: 0.05                # Poids intrinsic reward (TRÈS FAIBLE: bootstrap phase)
+rnd_output_dim: 128           # Dimension embedding RND
+rnd_hidden_dim: 256           # Taille hidden layers RND
+rnd_lr: 0.0001                # Learning rate RND (plus lent que policy)
+
+# ========== CHECKPOINTING ==========
+save_freq: 50000  # Save moins souvent
+
+# ========== REWARDS & CURRICULUM ==========
+reward_config: "configs/rewards_sparse.yaml"
+curriculum_config: "configs/curriculum_5v5.yaml"
+
+# ========== LOGGING ==========
+log_interval: 10  # Log moins souvent pour moins de spam
