@@ -7,17 +7,17 @@ phases:
     env_name: "academy_empty_goal_close"
     duration_steps: 10000000  # 1M steps
     success_criteria:
-      winrate_min: 1  # 100% de réussite (trivial)
+      winrate_min: .9 # 100% de réussite (trivial)
       min_episodes: 100
     opponent_mix:
       built_in: 1.0
 
-    # Phase 1: Keeper seulement (pas de défenseur)
+    # Phase 0bis: Keeper seulement (pas de défenseur)
   - name: "run_to_score_with_keeper"
     env_name: "academy_run_to_score_with_keeper"
     duration_steps: 5000000
     success_criteria:
-      winrate_min: 1
+      winrate_min: .85
       min_episodes: 100
     opponent_mix:
       built_in: 1.0
@@ -27,7 +27,7 @@ phases:
     env_name: "academy_3_vs_1_with_keeper"
     duration_steps: 50000000  # 5M steps
     success_criteria:
-      winrate_min: 0.90  # 90% de réussite
+      winrate_min: 0.8  # 90% de réussite
       min_episodes: 100
     opponent_mix:
       built_in: 1.0
@@ -37,7 +37,7 @@ phases:
     env_name: "academy_3_vs_2_with_keeper"
     duration_steps: 50000000  # 5M steps
     success_criteria:
-      winrate_min: 0.80  # 80% de réussite
+      winrate_min: 0.75  # 80% de réussite
       min_episodes: 100
     opponent_mix:
       built_in: 1.0
@@ -47,7 +47,7 @@ phases:
     env_name: "academy_3_vs_3_with_keeper"
     duration_steps: 50000000  # 5M steps
     success_criteria:
-      winrate_min: 0.75  # 75% de réussite
+      winrate_min: 0.7  # 75% de réussite
       min_episodes: 100
     opponent_mix:
       built_in: 1.0
@@ -67,7 +67,7 @@ phases:
     env_name: "5_vs_5_easy"
     duration_steps: 100000000  # 10M steps
     success_criteria:
-      winrate_min: 0.60  # 60% winrate
+      winrate_min: 0.65  # 60% winrate
       min_episodes: 100
     opponent_mix:
       built_in: 1.0
@@ -77,7 +77,7 @@ phases:
     env_name: "5_vs_5_medium"
     duration_steps: 100000000  # 10M steps
     success_criteria:
-      winrate_min: 0.50  # 50% winrate
+      winrate_min: 0.60  # 50% winrate
       min_episodes: 100
     opponent_mix:
       built_in: 1.0
@@ -87,7 +87,7 @@ phases:
     env_name: "5_vs_5_hard"
     duration_steps: 150000000  # 15M steps
     success_criteria:
-      winrate_min: 0.40  # 40% winrate
+      winrate_min: 0.55  # 40% winrate
       min_episodes: 100
     opponent_mix:
       built_in: 1.0

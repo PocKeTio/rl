@@ -23,11 +23,13 @@ player_movement:
   
 goal_distance:
   enabled: true
-  reward_scale: 0.5  # TRÈS FAIBLE: juste pour orienter
+  reward_scale: 0.01  # TRÈS FAIBLE: juste pour orienter
   normalize: true
   
 shot_any:
-  enabled: false
+  enabled: true
+  base_reward: 2.0    # Petit bonus pour tirer (apprendre l'action SHOT)
+  cooldown_steps: 10
   
 shot_attempt:
   enabled: false
@@ -63,7 +65,9 @@ dangerous_pass_penalty:
   enabled: false
 
 approach_own_goal_penalty:
-  enabled: false
+  enabled: true
+  danger_zone_x: -0.6  # Pénalité si x < -0.6 (proche de notre but)
+  reward: -5.0  # Malus pour décourager CSC
 
 backward_movement_penalty:
   enabled: false
