@@ -1,0 +1,94 @@
+# REWARDS SIMPLE - Checkpoint rewards (Google Research Football paper)
+# Source: https://arxiv.org/abs/1907.11180
+
+# ========== GOALS ==========
+goal_scored: 1.0  # Sparse reward from environment
+goal_conceded: -1.0
+own_goal: -1.0
+
+# ========== WIN/DRAW/LOSS ==========
+win_bonus: 0.0
+draw_bonus: 0.0
+loss_penalty: 0.0
+
+# ========== CHECKPOINT REWARDS (paper method) ==========
+# Reward +0.1 for moving ball close to opponent goal
+goal_distance:
+  enabled: true
+  reward_scale: 0.1  # Checkpoint reward
+  normalize: true
+
+# ========== ALL OTHER REWARDS DISABLED ==========
+ball_possession:
+  enabled: false
+
+player_movement:
+  enabled: false
+
+shot_any:
+  enabled: false
+
+shot_attempt:
+  enabled: false
+
+shot_on_target:
+  enabled: false
+
+successful_pass:
+  enabled: false
+
+pass_under_pressure_bonus:
+  enabled: false
+
+ball_recovery:
+  enabled: false
+
+ball_lost:
+  enabled: false
+
+successful_tackle:
+  enabled: false
+
+dribble_progress:
+  enabled: false
+
+penalty_box_bonus:
+  enabled: false
+
+dangerous_shot_penalty:
+  enabled: false
+
+dangerous_pass_penalty:
+  enabled: false
+
+approach_own_goal_penalty:
+  enabled: false
+
+backward_movement_penalty:
+  enabled: false
+
+out_of_bounds:
+  enabled: false
+
+yellow_card:
+  enabled: false
+
+red_card:
+  enabled: false
+
+sideline_penalty:
+  enabled: false
+
+time_penalty:
+  enabled: false
+
+# ========== SHAPING DISABLED ==========
+shaping:
+  enabled: false
+  start_weight: 1.0
+  end_weight: 1.0
+  anneal_steps: 10000000
+
+# ========== NORMALIZATION ==========
+normalize_rewards: false
+clip_rewards: false

@@ -1,0 +1,29 @@
+# CURRICULUM SIMPLE - Progressive difficulty (proven approach)
+
+phases:
+  # Phase 1: Empty goal (easiest)
+  - name: "empty_goal"
+    env_name: "academy_empty_goal_close"
+    duration_steps: 5000000  # 5M steps
+    success_criteria:
+      winrate_min: 0.95  # 95% winrate
+      min_episodes: 100
+    opponent_mix:
+      built_in: 1.0
+
+  # Phase 2: Keeper only
+  - name: "run_to_score_with_keeper"
+    env_name: "academy_run_to_score_with_keeper"
+    duration_steps: 10000000  # 10M steps
+    success_criteria:
+      winrate_min: 0.80  # 80% winrate
+      min_episodes: 100
+    opponent_mix:
+      built_in: 1.0
+
+  # Phase 3: Final - 11v11 easy
+  - name: "11v11_easy"
+    env_name: "11_vs_11_easy_stochastic"
+    duration_steps: 100000000  # No limit
+    opponent_mix:
+      built_in: 1.0

@@ -1,0 +1,54 @@
+# CONFIGURATION SIMPLE - Basée sur Google Research Football paper
+# Source: https://arxiv.org/abs/1907.11180
+# Best practices from: https://flyyufelix.github.io/2020/12/02/google-football-rl.html
+
+# ========== HARDWARE ==========
+device: "cuda"
+amp_enabled: true
+
+# ========== ENVIRONNEMENT ==========
+num_envs: 8  # Moderate parallelism
+rollout_len: 256
+total_timesteps: 20000000  # 20M steps (proven to work)
+frame_skip: 1
+mirror: false
+running_norm: false
+
+# ========== PPO HYPERPARAMETERS (Google Research Football paper) ==========
+gamma: 0.993  # Standard for football
+lambda_gae: 0.95
+clip_epsilon: 0.2
+value_clip_epsilon: 0.2
+target_kl: 0.01
+value_coef: 0.5
+max_grad_norm: 0.5  # Conservative
+
+# ========== ENTROPY ==========
+entropy_coef_start: 0.01  # Standard PPO
+entropy_coef_end: 0.001
+entropy_anneal_steps: 10000000  # 10M steps
+
+# ========== OPTIMIZATION ==========
+learning_rate: 0.0003  # Standard Adam LR
+
+# ========== BATCH & OPTIMIZATION ==========
+minibatch_size: null  # Full batch
+ppo_epochs: 4
+
+# ========== MODEL ARCHITECTURE ==========
+hidden_size: 256  # Smaller for faster training
+lstm_hidden_size: 128
+lstm_num_layers: 1
+
+# ========== RND (DISABLED for simplicity) ==========
+use_rnd: false
+
+# ========== CHECKPOINTING ==========
+save_freq: 50000
+
+# ========== REWARDS & CURRICULUM ==========
+reward_config: "configs/rewards_simple.yaml"
+curriculum_config: "configs/curriculum_simple.yaml"
+
+# ========== LOGGING ==========
+log_interval: 10
