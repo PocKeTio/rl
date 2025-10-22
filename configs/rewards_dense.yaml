@@ -34,7 +34,7 @@ shot_any:
 # ========== SHOT ATTEMPTS (conditions ULTRA-RELAXÉES) ==========
 shot_attempt:
   enabled: true
-  reward: 5.0   # FORT pour encourager tir
+  reward: 1.0   # FORT pour encourager tir
   require_possession: false
   min_x_position: 0.0  # N'importe où
   max_y_distance: 1.0  # N'importe où

@@ -6,7 +6,7 @@ device: "cuda"
 amp_enabled: true
 
 # ========== ENVIRONNEMENT ==========
-num_envs: 24
+num_envs: 1
 rollout_len: 256
 total_timesteps: 100000000  # 100M steps (long training)
 frame_skip: 1
